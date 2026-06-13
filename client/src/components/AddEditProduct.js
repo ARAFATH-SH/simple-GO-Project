@@ -111,7 +111,7 @@ function AddEditProduct({ product, onSave, onCancel }) {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: value === "price" ? parseFloat(value) || 0 : value,
     }));
   };
 
