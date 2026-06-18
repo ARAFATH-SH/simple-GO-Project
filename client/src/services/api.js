@@ -26,7 +26,7 @@ export const createProduct = async (productData) => {
     productData.price = Number(productData.price);
   }
   try {
-    const response = await api.post('/create-products', productData);
+    const response = await api.post('/products', productData);
     return response.data;
   } catch (error) {
     throw error;
