@@ -1,24 +1,30 @@
 package cmd
 
 import (
-	"ecommerce/global_router"
-	"ecommerce/handlers"
+	"ecommerce/middleware"
 	"fmt"
 	"net/http"
 )
 
-func Server() {
+func Serve() {
+	manager := middleware.NewManager()
+
 	mux := http.NewServeMux()
-	mux.Handle("GET /products", http.HandlerFunc(handlers.GetProducts))
 
-	mux.Handle("POST /products", http.HandlerFunc(handlers.CreateProduct))
+	manager.Use(
+		middleware.Preflight,
+		middleware.Cors,
+		middleware.Logger,
+	)
 
-	mux.Handle("GET /products/{id}", http.HandlerFunc(handlers.GetProductByID))
+	wrappedMux := manager.WrapMux(mux)
 
-	fmt.Println("Server is running on http://localhost:8080")
+	initRoutes(mux, manager)
 
-	globalRouter := global_router.GlobalRouter(mux)
-	err := http.ListenAndServe(":8080", globalRouter)
+	fmt.Println("Server is running on :8080")
+
+	err := http.ListenAndServe(":8080", wrappedMux)
+
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 	}
