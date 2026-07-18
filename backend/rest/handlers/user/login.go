@@ -1,6 +1,7 @@
-package handlers
+package user
 
 import (
+	"ecommerce/config"
 	"ecommerce/database"
 	"ecommerce/util"
 	"encoding/json"
@@ -13,7 +14,7 @@ type ReqLogin struct {
 	Password string `json:"password"`
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var reqLogin ReqLogin
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&reqLogin)
@@ -30,5 +31,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	util.SendData(w, usr, http.StatusCreated)
+	cnf := config.GetConfig()
+
+	accessToken, err := util.CreateJwt(cnf.JwtSecretKey, util.Payload{
+		Sub:       usr.ID,
+		FirstName: usr.FirstName,
+		LastName:  usr.LastName,
+		Email:     usr.Email,
+	})
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	util.SendData(w, accessToken, http.StatusCreated)
 }
