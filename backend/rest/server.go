@@ -11,14 +11,16 @@ import (
 )
 
 type Server struct {
-	cnf            config.Config
+	cnf            *config.Config
 	productHandler *product.Handler
 	userHandler    *user.Handler
 }
 
-func NewServer(cnf config.Config,
+func NewServer(
+	cnf *config.Config,
 	productHandler *product.Handler,
-	userHandler *user.Handler) *Server {
+	userHandler *user.Handler,
+) *Server {
 
 	return &Server{
 		cnf:            cnf,
