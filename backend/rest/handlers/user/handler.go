@@ -3,21 +3,19 @@ package user
 import (
 	"ecommerce/config"
 	"ecommerce/repo"
-	middleware "ecommerce/rest/middlewares"
 )
 
 type Handler struct {
-	cnf         *config.Config
-	middlewares *middleware.Middlewares
-	userRepo    repo.UserRepo
+	cnf      *config.Config
+	userRepo repo.UserRepo
 }
 
-func NewHandler(middlewares *middleware.Middlewares,
+func NewHandler(
+	cnf *config.Config,
 	userRepo repo.UserRepo,
-	cnf *config.Config) *Handler {
+) *Handler {
 	return &Handler{
-		cnf:         cnf,
-		middlewares: middlewares,
-		userRepo:    userRepo,
+		cnf:      cnf,
+		userRepo: userRepo,
 	}
 }

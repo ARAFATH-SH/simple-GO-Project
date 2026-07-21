@@ -14,18 +14,31 @@ type ReqLogin struct {
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req ReqLogin
+
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&req)
+	if err != nil {
+		fmt.Println(err)
+		util.SendError(w, http.StatusBadRequest, "Invalid req body")
+		return
+	}
 
 	if err != nil {
 		fmt.Println(err)
 		util.SendError(w, http.StatusBadRequest, "Invalid Request Data")
 		return
 	}
-
+	// fmt.Println("1")
 	usr, err := h.userRepo.Find(req.Email, req.Password)
+
 	if err != nil {
-		util.SendError(w, http.StatusUnauthorized, "Internal Server Error")
+		fmt.Println(err)
+		util.SendError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if usr == nil {
+		util.SendError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
