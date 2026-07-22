@@ -1,11 +1,18 @@
 package repo
 
+import (
+	"database/sql"
+	"fmt"
+
+	"github.com/jmoiron/sqlx"
+)
+
 type Product struct {
-	Id          int     `json:"id"`
-	Title       string  `json:"title"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	ImgURL      string  `json:"imageUrl"`
+	Id          int     `json:"id" db:"id"`
+	Title       string  `json:"title" db:"title"`
+	Description string  `json:"description" db:"description"`
+	Price       float64 `json:"price" db:"price"`
+	ImgURL      string  `json:"image_url" db:"image_url"`
 }
 
 type ProductRepo interface {
@@ -17,77 +24,152 @@ type ProductRepo interface {
 }
 
 type productRepo struct {
-	productList []*Product
+	//productList []*Product //in memory
+	db *sqlx.DB
 }
 
 // constructor
-func NewProductRepo() ProductRepo {
-	repo := &productRepo{}
-	generateInitialProduct(repo)
+func NewProductRepo(db *sqlx.DB) ProductRepo {
+	repo := &productRepo{
+		db: db,
+	}
+	// generateInitialProduct(repo)
 	return repo
 }
 
 func (r *productRepo) Create(p Product) (*Product, error) {
-	p.Id = len(r.productList) + 1
-	r.productList = append(r.productList, &p)
-	return &p, nil
-}
-func (r *productRepo) Get(productId int) (*Product, error) {
-	for _, product := range r.productList {
-		if product.Id == productId {
-			return product, nil
-		}
+	query := `
+		insert into products(
+			title,
+			description,
+			price,
+			image_url
+		) values(
+		  	$1,
+		  	$2,
+		  	$3,
+			$4
+		)
+		RETURNING id
+	`
+	row := r.db.QueryRow(query, p.Title, p.Description, p.Price, p.ImgURL)
+	err := row.Scan(&p.Id)
+
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	return &p, nil
+
+}
+func (r *productRepo) Get(id int) (*Product, error) {
+	var prd Product
+
+	query := `
+		SELECT 
+		id,
+    	title,
+    	description,
+    	price,
+    	image_url
+		FROM products
+		WHERE id = $1
+	`
+
+	err := r.db.Get(&prd, query, id)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &prd, nil
+
 }
 func (r *productRepo) List() ([]*Product, error) {
-	return r.productList, nil
+	var prdList []*Product
+
+	querry := `
+		SELECT 
+		id,
+    	title,
+    	description,
+    	price,
+    	image_url 
+		FROM products
+	`
+
+	err := r.db.Select(&prdList, querry)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return prdList, nil
 }
 func (r *productRepo) Delete(productID int) error {
-	var tempList []*Product
+	query := `
+		DELETE FROM products
+		WHERE id = $1
+	`
+	_, err := r.db.Exec(query, productID)
 
-	for _, p := range r.productList {
-		if p.Id != productID {
-			tempList = append(tempList, p)
-		}
+	if err != nil {
+		return err
 	}
-	r.productList = tempList
 	return nil
 }
-func (r *productRepo) Update(product Product) (*Product, error) {
-	for idx, p := range r.productList {
-		if p.Id == product.Id {
-			r.productList[idx] = &product
-		}
+func (r *productRepo) Update(p Product) (*Product, error) {
+	query := `
+		UPDATE products
+		SET 
+			title=$1,
+			description=$2,
+			price=$3,
+			image_url=$4
+		WHERE id=$5
+		RETURNING id
+	`
+
+	row := r.db.QueryRow(query, p.Title, p.Description, p.Price, p.ImgURL, p.Id)
+	err := row.Err()
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
 	}
-	return &product, nil
+	return &p, nil
+
 }
 
-func generateInitialProduct(r *productRepo) {
-	prd1 := &Product{
-		Id:          1,
-		Title:       "Wireless Headphones",
-		Description: "High-quality noise-cancelling headphones.",
-		Price:       129.99,
-		ImgURL:      "https://www.lovefoodhatewaste.com/sites/default/files/styles/twitter_card_image/public/2022-07/Citrus%20fruits.jpg.webp?itok=H1j9CCCS",
-	}
-	prd2 := &Product{
-		Id:          2,
-		Title:       "Smart Watch",
-		Description: "Stylish smart watch with health tracking.",
-		Price:       199.99,
-		ImgURL:      "https://i0.wp.com/post.healthline.com/wp-content/uploads/2021/05/apples-1296x728-header.jpg?w=1155&h=1528",
-	}
-	prd3 := &Product{
-		Id:          3,
-		Title:       "Running Shoes",
-		Description: "Lightweight shoes for everyday running.",
-		Price:       89.50,
-		ImgURL:      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZbMOVB8a8wRQ6e-UKZggiu7-edRAN1GolPQ&s",
-	}
+// func generateInitialProduct(r *productRepo) {
+// 	prd1 := &Product{
+// 		Id:          1,
+// 		Title:       "Wireless Headphones",
+// 		Description: "High-quality noise-cancelling headphones.",
+// 		Price:       129.99,
+// 		ImgURL:      "https://www.lovefoodhatewaste.com/sites/default/files/styles/twitter_card_image/public/2022-07/Citrus%20fruits.jpg.webp?itok=H1j9CCCS",
+// 	}
+// 	prd2 := &Product{
+// 		Id:          2,
+// 		Title:       "Smart Watch",
+// 		Description: "Stylish smart watch with health tracking.",
+// 		Price:       199.99,
+// 		ImgURL:      "https://i0.wp.com/post.healthline.com/wp-content/uploads/2021/05/apples-1296x728-header.jpg?w=1155&h=1528",
+// 	}
+// 	prd3 := &Product{
+// 		Id:          3,
+// 		Title:       "Running Shoes",
+// 		Description: "Lightweight shoes for everyday running.",
+// 		Price:       89.50,
+// 		ImgURL:      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZbMOVB8a8wRQ6e-UKZggiu7-edRAN1GolPQ&s",
+// 	}
 
-	r.productList = append(r.productList, prd1)
-	r.productList = append(r.productList, prd2)
-	r.productList = append(r.productList, prd3)
-}
+// 	r.productList = append(r.productList, prd1)
+// 	r.productList = append(r.productList, prd2)
+// 	r.productList = append(r.productList, prd3)
+// }

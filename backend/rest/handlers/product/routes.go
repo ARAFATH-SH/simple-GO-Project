@@ -41,7 +41,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middleware.Manager
 		"DELETE /products/{id}",
 		manager.With(
 			http.HandlerFunc(h.DeleteProduct),
-			h.middlewares.AuthenticationJWT,
+			// h.middlewares.AuthenticationJWT,
 		),
 	)
 }

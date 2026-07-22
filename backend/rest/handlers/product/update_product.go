@@ -18,6 +18,7 @@ type ReqUpdateProduct struct {
 }
 
 func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+
 	productID := r.PathValue("id")
 
 	pId, err := strconv.Atoi(productID)
@@ -46,6 +47,7 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
+		fmt.Println(err)
 		util.SendError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
