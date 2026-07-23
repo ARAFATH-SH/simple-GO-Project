@@ -2,11 +2,13 @@ package product
 
 import (
 	"ecommerce/util"
+	"fmt"
 	"net/http"
 	"strconv"
 )
 
 func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("reached")
 	productID := r.PathValue("id")
 
 	pId, err := strconv.Atoi(productID)

@@ -21,10 +21,17 @@ func Serve() {
 		os.Exit(1)
 	}
 
-	middlewares := middleware.NewMiddlewares(cnf)
+	err = db.MigrateDB(dbCon, "./migrations")
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	productRepo := repo.NewProductRepo(dbCon)
 	userRepo := repo.NewUserRepo(dbCon)
+
+	middlewares := middleware.NewMiddlewares(cnf)
 
 	productHandler := product.NewHandler(middlewares, productRepo)
 	userHandler := user.NewHandler(cnf, userRepo)
